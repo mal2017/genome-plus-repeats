@@ -112,7 +112,8 @@ process repeatmasker_mask_extra {
 	conda 'repeatmasker'
 
 	cpus 12
-
+	time '1h'
+	
 	input:
 	file genome from genome_fasta_ch
 	file extra from clean_extra_fasta_ch_2
