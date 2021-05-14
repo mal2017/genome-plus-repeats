@@ -90,7 +90,7 @@ process combine_gtfs {
 	file g_gtf from genome_gtf_ch
 
 	output:
-	file params.prefix + ".gtf"
+	file params.prefix + ".gtf" into combined_gtf_ch
 
 	script:
 	is_gz = {assert '.gz' =~ params.genome_gtf}
@@ -116,7 +116,7 @@ process repeatmasker_mask_extra {
 	file extra from clean_extra_fasta_ch_2
 
 	output:
-	file params.prefix + ".fasta.gz"
+	file params.prefix + ".fasta.gz" into combined_fa_ch
 
 	script:
 	is_gz = {assert '.gz' =~ params.genome_fasta}
@@ -137,4 +137,86 @@ process repeatmasker_mask_extra {
 
 		cat $extra genome.fasta.masked  | gzip -c > $of
 		"""
+}
+
+process end2end_ltrs {
+	publishDir "results", mode: 'copy'
+	conda 'bioconductor-rtracklayer r-tidyverse'
+
+	input:
+	file fa from combined_fa_ch
+	file gtf from combined_gtf_ch
+
+	output:
+	file "end2end-ltrs.*" into end2end_ch
+
+	"""
+	#!/usr/bin/env Rscript
+
+	library(rtracklayer)
+	library(tidyverse)
+
+	fa <- import("$fa")
+
+	gtf <- import("$gtf")
+
+	internals <- fa[str_detect(names(fa),"[-_]I")]
+	ltrs <- fa[str_detect(names(fa),"[-_]LTR")]
+	others <- fa[!names(fa) %in% c(names(internals),names(ltrs))]
+
+	# find tes that have an internal and ltr
+	internals_names <- str_extract(string = names(internals), pattern = "^.+(?=[-_]I)")
+	ltrs_names <- str_extract(string =  names(ltrs), pattern = "^.+(?=[-_]LTR)")
+	mergeable <- intersect(internals_names, ltrs_names)
+	names(internals_names) <-  names(internals)
+	names(ltrs_names) <-  names(ltrs)
+
+	# find Tes that only have 1 or the other
+	unmergeable <- c(names(ltrs)[!ltrs_names %in% internals_names],
+	  names(internals)[!internals_names %in% ltrs_names])
+
+	# name the seqs so we can access them by the merged names
+	names(internals) <- internals_names
+	names(ltrs) <- ltrs_names
+
+	res <- list()
+
+	for (m in mergeable) {
+  	in_seq <- internals[[m]]
+  	ltr_seq <- ltrs[[m]]
+
+  	mrg <- c(ltr_seq,in_seq,ltr_seq)
+
+  	res[[m]] <- mrg
+	}
+
+	res <- c(Biostrings::DNAStringSet(res), fa[!names(fa) %in% mergeable])
+
+	mergeable_gtf <- gtf[(str_extract(string = gtf\$gene_id, pattern = "^.+(?=[-_]I)") %in% mergeable) | (str_extract(string = gtf\$gene_id, pattern = "^.+(?=[-_]LTR)") %in% mergeable)]
+	unmergeable_gtf <- gtf[!gtf\$gene_id %in% mergeable_gtf\$gene_id]
+
+	gtf_df <- as_tibble(mergeable_gtf)
+
+	gtf_df <- gtf_df %>%
+	  mutate(seqnames=if_else(str_detect(seqnames,"[-_]I"),str_extract(string = seqnames, pattern = "^.+(?=[-_]I)"), as.character(seqnames))) %>%
+	  mutate(seqnames=if_else(str_detect(seqnames,"[-_]LTR"),str_extract(string = seqnames, pattern = "^.+(?=[-_]LTR)"), as.character(seqnames)))
+
+
+	res_gtf <- gtf_df %>%
+	  mutate(start=if_else(str_detect(gene_id,"[-_]I") & seqnames %in% mergeable, start + width(ltrs[seqnames]), start)) %>%
+	  mutate(end=if_else(str_detect(gene_id,"[-_]I") & seqnames %in% mergeable, end + width(ltrs[seqnames]), end)) %>%
+	  dplyr::select(-width) %>%
+	  GRanges() %>%
+	  c(.,unmergeable_gtf)
+
+	res_gtf <- sortSeqlevels(res_gtf)
+
+	res_gtf <- sort(res_gtf)
+
+	export(res_gtf,"end2end-ltrs.gtf")
+
+	export(res,"end2end-ltrs.fasta.gz")
+
+	"""
+
 }
