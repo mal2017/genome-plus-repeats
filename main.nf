@@ -28,6 +28,7 @@ process sed_strip_rpm_weirdness {
 
 
 process samtools_faidx_get_seqlens {
+		conda 'samtools'
 		input:
 		file fasta from clean_extra_fasta_ch
 
@@ -41,6 +42,7 @@ process samtools_faidx_get_seqlens {
 }
 
 process bedtools_makewindows_get_bed {
+		conda 'bedtools'
 		input:
 		file fai from fai_ch
 
