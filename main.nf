@@ -113,7 +113,7 @@ process repeatmasker_mask_extra {
 
 	cpus 12
 	time '1h'
-	
+
 	input:
 	file genome from genome_fasta_ch
 	file extra from clean_extra_fasta_ch_2
@@ -145,6 +145,9 @@ process repeatmasker_mask_extra {
 process end2end_ltrs {
 	publishDir "results", mode: 'copy'
 	conda 'bioconductor-rtracklayer r-tidyverse'
+
+	time '1h'
+	memory '16 GB'
 
 	input:
 	file fa from combined_fa_ch
