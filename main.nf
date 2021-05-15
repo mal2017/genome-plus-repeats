@@ -222,7 +222,7 @@ process end2end_ltrs {
 
 	export(res_gtf,"end2end-ltrs.gtf")
 
-	export(res,"end2end-ltrs.fasta.gz")
+	export(res,"end2end-ltrs.fasta")
 
 	"""
 
