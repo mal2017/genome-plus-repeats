@@ -196,7 +196,8 @@ process end2end_ltrs {
   	res[[m]] <- mrg
 	}
 
-	res <- c(Biostrings::DNAStringSet(res), fa[!names(fa) %in% mergeable])
+	keep_unmergeable <- c(internals_names,ltrs_names)[!c(internals_names,ltrs_names) %in% mergeable]
+	res <- c(Biostrings::DNAStringSet(res), fa[names(fa) %in% unmergeable], fa[!names(fa) %in% c(names(ltrs_names),names(internals_names))] )
 
 	mergeable_gtf <- gtf[(str_extract(string = gtf\$gene_id, pattern = "^.+(?=[-_]I)") %in% mergeable) | (str_extract(string = gtf\$gene_id, pattern = "^.+(?=[-_]LTR)") %in% mergeable)]
 	unmergeable_gtf <- gtf[!gtf\$gene_id %in% mergeable_gtf\$gene_id]
