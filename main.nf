@@ -136,7 +136,7 @@ process repeatmasker_mask_extra {
 		"""
 		cp $genome genome.fasta
 
-		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -nolow -dir . genome.fasta
+		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -dir . genome.fasta
 
 		cat $extra genome.fasta.masked  | gzip -c > $of
 		"""
