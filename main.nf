@@ -28,7 +28,7 @@ process sed_strip_rpm_weirdness {
 
 
 process samtools_faidx_get_seqlens {
-		conda 'samtools'
+		conda 'samtools=1.16.1'
 		input:
 		file fasta from clean_extra_fasta_ch
 
@@ -42,7 +42,7 @@ process samtools_faidx_get_seqlens {
 }
 
 process bedtools_makewindows_get_bed {
-		conda 'bedtools'
+		conda 'bedtools=2.30.0'
 		input:
 		file fai from fai_ch
 
@@ -55,7 +55,7 @@ process bedtools_makewindows_get_bed {
 }
 
 process bedtogenepred_get_genepred {
-	conda 'ucsc-bedtogenepred'
+	conda 'ucsc-bedtogenepred=377'
 
 	input:
 	file bed from bed_ch
@@ -69,7 +69,7 @@ process bedtogenepred_get_genepred {
 }
 
 process genepredtogtf_get_gtf {
-	conda 'ucsc-genepredtogtf gffread'
+	conda 'ucsc-genepredtogtf=377 gffread=0.12.7'
 
 	input:
 	file gp from genepred_ch
@@ -85,7 +85,7 @@ process genepredtogtf_get_gtf {
 
 process combine_gtfs {
 	publishDir 'results', mode: 'copy'
-	conda 'gffread'
+	conda 'gffread=0.12.7'
 
 	input:
 	file gtf from extra_gtf_ch
@@ -108,8 +108,8 @@ process combine_gtfs {
 }
 
 process repeatmasker_mask_extra {
-	publishDir "results", pattern: '*.fasta.gz', mode: 'copy'
-	conda 'repeatmasker'
+	publishDir "results", mode: 'copy'
+	conda 'repeatmasker=4.1.2 samtools=1.16.1'
 
 	cpus 12
 	time '1h'
@@ -119,25 +119,29 @@ process repeatmasker_mask_extra {
 	file extra from clean_extra_fasta_ch_2
 
 	output:
-	file params.prefix + ".fasta.gz" into combined_fa_ch
+	file params.prefix + ".repeatmasked.fasta.gz" into combined_fa_ch
+	file params.prefix + ".repeatmasked.gff" into combined_gff_ch
 
 	script:
 	is_gz = {assert '.gz' =~ params.genome_fasta}
-	of = params.prefix + ".fasta.gz"
+	of = params.prefix + ".repeatmasked.fasta.gz"
+	ofgff = params.prefix + ".repeatmasked.gff"
 	if( is_gz )
 		"""
 		gunzip $genome -c > genome.fasta
 
-		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -nolow -dir . genome.fasta
+		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -gff -dir . genome.fasta
 
-		cat $extra genome.fasta.masked  | gzip -c > $of
+		cat $extra genome.fasta.masked  | bgzip -c > $of
+		cat genome.fasta.out.gff > $ofgff
 		"""
 	else
 		"""
 		cp $genome genome.fasta
 
-		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -dir . genome.fasta
+		RepeatMasker -e ncbi -pa ${task.cpus} -s -lib $extra -no_is -gff -dir . genome.fasta
 
-		cat $extra genome.fasta.masked  | gzip -c > $of
+		cat $extra genome.fasta.masked  | bgzip -c > $of
+		cat genome.fasta.out.gff > $ofgff
 		"""
 }
