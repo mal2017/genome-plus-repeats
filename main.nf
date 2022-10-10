@@ -2,11 +2,11 @@
 
 nextflow.enable.dsl=1
 
-version = '1.0'
+version = '0.2.0'
 
-params.extra_fasta = '../data-genome/dmel_repbase_lib.fasta'
-params.genome_fasta = 'ftp://ftp.flybase.net/genomes/dmel/current/fasta/dmel-all-chromosome-r6.39.fasta.gz'
-params.genome_gtf = 'ftp://ftp.flybase.net/releases/current/dmel_r6.39/gtf/dmel-all-r6.39.gtf.gz'
+params.extra_fasta = 'repeats.fasta'
+params.genome_fasta = 'http://ftp.flybase.net/releases/FB2021_04/dmel_r6.41/fasta/dmel-all-chromosome-r6.41.fasta.gz'
+params.genome_gtf = 'http://ftp.flybase.net/releases/FB2021_04/dmel_r6.41/gtf/dmel-all-r6.41.gtf.gz'
 params.prefix = './plus-repeats'
 
 
