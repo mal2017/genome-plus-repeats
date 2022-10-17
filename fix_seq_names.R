@@ -57,13 +57,14 @@ a2 <- str_remove(a1,"\"")
 a3 <- str_remove(a2,"Motif:")
 
 masked_gff$Target <- a3
+masked_gff$name <- a3
 
 # ----
 
 export(te_fa,"results/Tidalbase_transposon_sequence.filtered.fasta")
 export(genome_and_tes_fa,"results/plus-repeats.repeatmasked.fixednames.fasta")
 export(tes_gtf, "results/plus-repeats.fixednames.gtf")
-export(masked_gff, "results/plus-repeats.repeatmasked.fixednames.gff")
+export(masked_gff, "results/plus-repeats.repeatmasked.fixednames.bed")
 
 
 # these must be bgzipped afterwards and the Tidalbase seqs must be samtools faidx'd as well
