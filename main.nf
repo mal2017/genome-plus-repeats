@@ -121,11 +121,14 @@ process repeatmasker_mask_extra {
 	output:
 	file params.prefix + ".repeatmasked.fasta.gz" into combined_fa_ch
 	file params.prefix + ".repeatmasked.gff" into combined_gff_ch
+	file params.prefix + ".repeatmasked.out" into combined_rpm_ch
 
 	script:
 	is_gz = {assert '.gz' =~ params.genome_fasta}
 	of = params.prefix + ".repeatmasked.fasta.gz"
 	ofgff = params.prefix + ".repeatmasked.gff"
+	ofout = params.prefix + ".repeatmasked.out"
+
 	if( is_gz )
 		"""
 		gunzip $genome -c > genome.fasta
@@ -134,6 +137,7 @@ process repeatmasker_mask_extra {
 
 		cat $extra genome.fasta.masked  | bgzip -c > $of
 		cat genome.fasta.out.gff > $ofgff
+		cat genome.fasta.out > $ofout
 		"""
 	else
 		"""
@@ -143,5 +147,6 @@ process repeatmasker_mask_extra {
 
 		cat $extra genome.fasta.masked  | bgzip -c > $of
 		cat genome.fasta.out.gff > $ofgff
+		cat genome.fasta.out > $ofout
 		"""
 }
